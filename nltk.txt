@@ -1,0 +1,4 @@
+popular
+wordnet
+wordnet_ic
+punkt
