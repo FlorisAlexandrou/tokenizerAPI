@@ -2,7 +2,6 @@ from flask import Flask, request
 import nltk
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
-nltk.download()
 
 app = Flask(__name__)
 
