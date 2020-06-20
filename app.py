@@ -5,8 +5,9 @@ from nltk.tokenize import word_tokenize
 from nltk.util import ngrams
 
 app = Flask(__name__)
-query_words = ['show', 'display', 'query', 'illustrate', 'print']
+query_words = ['show', 'display', 'query', 'illustrate', 'print', 'select']
 white_list_words = ['between']
+num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 lemmatizer = WordNetLemmatizer()
 
 
@@ -31,6 +32,11 @@ def get_tokens(sentence):
             continue
 
         if tag not in ['DT', 'IN', 'PRP', 'CC']:
+            if tag == 'CD':
+                # Turn words to numbers for the lookup table
+                if word in num_words:
+                    word = str(num_words.index(word))
+
             single_word_tokens.append(word)
         elif word in white_list_words:
             single_word_tokens.append(word)
