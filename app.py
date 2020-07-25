@@ -27,7 +27,7 @@ def get_tokens(sentence):
     pos_tagged = nltk.pos_tag(lemmatized_tokens)
     single_word_tokens = []
     for word, tag in pos_tagged:
-        if word in query_words and not is_sql:
+        if word.lower() in query_words and not is_sql:
             is_sql = True
             continue
 
