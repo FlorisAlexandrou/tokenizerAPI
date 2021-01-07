@@ -1,14 +1,20 @@
-from flask import Flask
+from flask import Flask, request
 import nltk
+from flask_cors import CORS
 from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from nltk.util import ngrams
+from statsmodels.tsa.statespace.sarimax import SARIMAX
+from datetime import datetime
+from dateutil.relativedelta import *
+import json
 
 app = Flask(__name__)
 query_words = ['show', 'display', 'query', 'illustrate', 'print', 'select']
 white_list_words = ['between']
 num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 lemmatizer = WordNetLemmatizer()
+CORS(app)
 
 
 @app.route('/')
@@ -53,6 +59,37 @@ def get_tokens(sentence):
     }
     return response
 
+
+@app.route('/predict', methods=['POST'])
+def predict():
+    num_predicted_months = 6
+    date_format = '%Y-%m-%dT%H:%M:%S'
+    sales = []
+    dates = []
+    data = request.json
+
+    # Parse json request
+    for row in data:
+        sales.append(row['sales'])
+        dates.append(datetime.strptime(row['date'], date_format))
+
+    # Fit model
+    model = SARIMAX(sales, order=(1, 1, 1), seasonal_order=(1, 1, 1, len(sales))).fit()
+    # Make prediction from last month to the next number of months
+    forecast = model.predict(start=len(sales), end=len(sales) + num_predicted_months-1).tolist()
+
+    # Map dates according to the forecast
+    new_dates = [dates[-1]]
+    for i in range(num_predicted_months):
+        new_dates.append(new_dates[i] + relativedelta(months=+1))
+    new_dates.pop(0)
+
+    # Format json response
+    forecast_dates = [datetime.strftime(date, date_format) for date in new_dates]
+    output = json.dumps(
+        [{'sales': sales, 'date': date} for sales, date in zip(forecast, forecast_dates)]
+    )
+    return output
 
 if __name__ == '__main__':
     app.run()
