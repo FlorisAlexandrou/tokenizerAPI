@@ -10,7 +10,6 @@ from dateutil.relativedelta import *
 import json
 
 app = Flask(__name__)
-query_words = ['show', 'display', 'query', 'illustrate', 'print', 'select']
 white_list_words = ['between']
 num_words = ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine"]
 lemmatizer = WordNetLemmatizer()
@@ -24,7 +23,6 @@ def hello_world():
 
 @app.route('/tokenize/<sentence>', methods=['GET'])
 def get_tokens(sentence):
-    is_sql = False
     # Get Tokens
     tokens = word_tokenize(sentence)
     # Lemmatize Tokens
@@ -33,10 +31,7 @@ def get_tokens(sentence):
     pos_tagged = nltk.pos_tag(lemmatized_tokens)
     single_word_tokens = []
     for word, tag in pos_tagged:
-        if word.lower() in query_words and not is_sql:
-            is_sql = True
-            continue
-
+        # Filter unnecessary words
         if tag not in ['DT', 'IN', 'PRP', 'CC']:
             if tag == 'CD':
                 # Turn words to numbers for the lookup table
@@ -44,6 +39,7 @@ def get_tokens(sentence):
                     word = str(num_words.index(word))
 
             single_word_tokens.append(word)
+        # Add whitelisted words to the list (e.g. between)
         elif word in white_list_words:
             single_word_tokens.append(word)
 
@@ -52,7 +48,6 @@ def get_tokens(sentence):
 
     response = {
         'query': sentence,
-        'isSqlQuery': is_sql,
         'tokens': single_word_tokens,
         'bigrams': bigrams,
         'trigrams': trigrams
@@ -90,6 +85,7 @@ def predict():
         [{'sales': sales, 'date': date} for sales, date in zip(forecast, forecast_dates)]
     )
     return output
+
 
 if __name__ == '__main__':
     app.run()
